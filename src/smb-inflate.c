@@ -6,7 +6,7 @@
  * resident in memory (starting at ~0x80250b80) during playback.  
  */
 
-#define MAX_SIZE 0x16840
+#define MAX_SIZE 0x16844
 
 int main(int argc, char* argv[]){
 	if (argc < 3) {
