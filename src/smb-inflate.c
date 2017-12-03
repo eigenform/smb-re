@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include "smb.h"
 
 /* 
  * Inflate binary replay data from some .gci, obtaining the representation 
  * resident in memory (starting at ~0x80250b80) during playback.  
  */
-
-#define MAX_SIZE 0x16844
 
 int main(int argc, char* argv[]){
 	if (argc < 3) {
@@ -39,8 +38,7 @@ int main(int argc, char* argv[]){
 
 	// Compressed data starts at +0x2098 in .gci
 	int ipos = 0x2098, opos = 0x0;
-	while (ipos < MAX_SIZE && opos < MAX_SIZE)
-	{
+	while (ipos < MAX_SIZE && opos < MAX_SIZE) {
 		cur = buf[ipos];
 		if (cur & (1<<7)) {
 			count = (int)(cur & ~(1 <<7));
@@ -48,7 +46,8 @@ int main(int argc, char* argv[]){
 			memset(&res[opos], targ, count);
 			ipos += 2;
 			opos += count;
-		} else {
+		} 
+		else {
 			count = (int)cur;
 			ipos++;
 			memcpy(&res[opos], &buf[ipos], count);
@@ -58,5 +57,6 @@ int main(int argc, char* argv[]){
 	}
 	fwrite(&res, 1, MAX_SIZE, r);
 	fclose(r);
+	printf("[*] Wrote inflated region to %s\n", argv[2]);
 	return 0;
 }

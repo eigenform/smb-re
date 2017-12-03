@@ -2,5 +2,8 @@
 !.gitignore
 !GMBE8P.map
 !README.md
+!src/
 !src/Makefile
 !src/smb-inflate.c
+!src/smb-deflate.c
+!src/smb.h
