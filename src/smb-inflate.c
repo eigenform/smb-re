@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+
+#include "smb_compression.h"
 #include "smb.h"
 
 /* 
@@ -33,29 +35,9 @@ int main(int argc, char* argv[]){
 		return -1;
 	}
 
-	unsigned char cur, targ;
-	int count;
+	int output_size = inflate_region(buf, res);
 
-	// Compressed data starts at +0x2098 in .gci
-	int ipos = 0x2098, opos = 0x0;
-	while (ipos < MAX_SIZE && opos < MAX_SIZE) {
-		cur = buf[ipos];
-		if (cur & (1<<7)) {
-			count = (int)(cur & ~(1 <<7));
-			targ = buf[ipos+1];
-			memset(&res[opos], targ, count);
-			ipos += 2;
-			opos += count;
-		} 
-		else {
-			count = (int)cur;
-			ipos++;
-			memcpy(&res[opos], &buf[ipos], count);
-			ipos += count;
-			opos += count;
-		}
-	}
-	fwrite(&res, 1, MAX_SIZE, r);
+	fwrite(&res, 1, output_size, r);
 	fclose(r);
 	printf("[*] Wrote inflated region to %s\n", argv[2]);
 	return 0;

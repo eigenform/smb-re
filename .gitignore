@@ -6,4 +6,6 @@
 !src/Makefile
 !src/smb-inflate.c
 !src/smb-deflate.c
+!src/smb_compression.c
+!src/smb_compression.h
 !src/smb.h
