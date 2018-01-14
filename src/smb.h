@@ -18,12 +18,13 @@
 #define DENTRY_SIZE 0x40
 #define BANNER_SIZE 0x2000
 
+/* This is on the header of every .GCI file */
 struct dentry {
 	uint8_t gamecode[4];
 	uint8_t makercode[2];
 	uint8_t unused_a;
 	uint8_t bi_flags;
-	uint8_t filename[0x20];
+	char filename[0x20];
 	uint8_t modtime[4];
 	uint8_t image_offset[4];
 	uint8_t icon_fmt[2];
@@ -54,12 +55,10 @@ struct smb_data {
 }__attribute__((__packed__));
 
 /* This is the high-level layout for gamedata savefiles.
- *
  * Zero-length array at the end should be replaced after
- * we've finished articulating the actual format */
+ * we've finished articulating the actual format. */
 struct smb_gamedata {
 	unsigned char checksum[2];
-	//unsigned char unk_5[2];
 	unsigned char gamedata_version[2]; // I think?
 	unsigned char banner[0x5800];
 	unsigned char comments[COMMENT_SIZE];
@@ -68,24 +67,14 @@ struct smb_gamedata {
 }__attribute__((__packed__));
 
 
-/* Race party-game tables ---------------------- */
+/* Entries in each of the high score ranking tables */
 struct race_rank_entry {
 	unsigned char name[3];	   // three character name
-	unsigned char monkey_type; // observed vals=0x0,0x01,0x02,0x03
+	unsigned char monkey_type; // 0x00 - 0x03
 	unsigned char time[3];	   // ie, {0x63,0x3b,0x63} is 99'59"99
 	unsigned char unk_00;	   // always seems to be 0x00?
 }__attribute__((__packed__));
 
-struct race_rank_table {
-	struct race_rank_entry jungle_circuit[6];
-	struct race_rank_entry aqua_offroad[6];
-	struct race_rank_entry frozen_highway[6];
-	struct race_rank_entry sky_downtown[6];
-	struct race_rank_entry pipe_warp_tunnel[6];
-	struct race_rank_entry speed_desert[6];
-}__attribute__((__packed__));
-
-/* Target party-game tables -------------------- */
 struct target_rank_entry {
 	unsigned char name[3];
 	unsigned char monkey_type;
@@ -93,49 +82,32 @@ struct target_rank_entry {
 	unsigned char unk_0000[2]; //always seems to be {0x00,0x00}
 }__attribute__((__packed__));
 
-struct target_rank_table {
-	struct target_rank_entry five_rounds[5];
-	struct target_rank_entry ten_rounds[5];
-	struct target_rank_entry fifteen_rounds[5];
-}__attribute__((__packed__));
-
-/* Bowling mini-game score tables -------------- */
 struct bowling_rank_entry {
 	unsigned char name[3];
 	unsigned char monkey_type;
 	unsigned char score[2];
 }__attribute__((__packed__));
 
-struct bowling_rank_table {
-	struct bowling_rank_entry normal_mode[5];
-	struct bowling_rank_entry challenge_mode[5];
-}__attribute__((__packed__));
-
-/* Golf mini-game score tables ----------------- */
 struct golf_rank_entry {
 	unsigned char name[3];
 	unsigned char monkey_type;
-	unsigned char out[2]; 
-	unsigned char in[2]; //total score (in+out) computed in-game?
+	unsigned char out_score[2];
+	unsigned char in_score[2];
 }__attribute__((__packed__));
 
-struct golf_rank_table {
-	struct golf_rank_entry eighteen_holes[5];
-}__attribute__((__packed__));
-
-/* Main game score tables ---------------------- */
 struct main_rank_entry {
 	unsigned char name[3];
-	unsigned char unk_a; // always zero in default savedata, floor#?
+	unsigned char unk_a; // always zero in default savedata
 	unsigned char score[4]; // unclear if this is 4 bytes?
 
 	/* Unclear what these eight bytes are in the default savedata.
 	 * All entries are { 0x00, 0x0a, 0xfc, 0x80, 0xff, 0x00, 0xff, 0x00}
-	 *					    floor#?
 	 */
 	unsigned char unk_b[8];
 }__attribute__((__packed__));
 
+/* The ranking tables are just arrays of the entries
+ * described above */
 struct main_game_table {
 	struct main_rank_entry beginner_mode[5];
 	struct main_rank_entry advanced_mode[5];
@@ -143,35 +115,110 @@ struct main_game_table {
 }__attribute__((__packed__));
 
 struct party_game_table {
-	struct race_rank_table	 monkey_race;
-	struct target_rank_table monkey_target;
+	struct race_rank_entry jungle_circuit[6];
+	struct race_rank_entry aqua_offroad[6];
+	struct race_rank_entry frozen_highway[6];
+	struct race_rank_entry sky_downtown[6];
+	struct race_rank_entry pipe_warp_tunnel[6];
+	struct race_rank_entry speed_desert[6];
+	struct target_rank_entry five_rounds[5];
+	struct target_rank_entry ten_rounds[5];
+	struct target_rank_entry fifteen_rounds[5];
 }__attribute__((__packed__));
 
 struct mini_game_table {
-	struct bowling_rank_table monkey_bowling;
-	struct golf_rank_table    monkey_golf;
+	struct bowling_rank_entry normal_mode[5];
+	struct bowling_rank_entry challenge_mode[5];
+	struct golf_rank_entry eighteen_holes[5];
 }__attribute__((__packed__));
-
 
 /* Top-level gamedata structure, to fit inside `struct smb_gamedata`.
  * Seems to be something like this:
  *	0x40-byte block  --
- *	0x6c-byte block  -- 
+ *	0x6c-byte block  --
  *	0x1fc-byte block -- (party + mini-game scores)
  *	0x20-byte block
  *	0xf0-byte block  -- (main game rankings)
  *	(zero padding until EOF)
  */
 struct smb_gamedata_cont {
-	unsigned char unk_7[0x40]; 
-	unsigned char unk_8[0x6c]; 
+	unsigned char gamedata_block_1[0x40];
+
+	// gamedata_block_2
+	struct {
+		unsigned char gameselect_cursor_idx;
+		unsigned char maingame_modeselect_cursor_idx;
+
+		unsigned char unk_86_87[2];
+
+		// P1 - P4 character selection cursor
+		unsigned char character_select_idx[4];
+
+		unsigned char unk_8c_8d[2]; // 50 5a
+		unsigned char maingame_difficulty_cursor_idx; // 00
+		unsigned char maingame_difficulty_cursor_idx_2; // 00
+		unsigned char unk_90; // 03
+		unsigned char unk_91_95[5]; // 33 05 03 01 00
+
+		unsigned char unk_96_97[2]; // 0000 (i think padding)
+
+		uint16_t unk_98_9a[2]; // pair stored with u32 at 0xc4
+		uint16_t unk_9c_aa[8]; // each pair of uint16_t is stored with a u32 from 0xb0
+
+		unsigned char unk_ac_af[4]; // 00000000 (padding?)
+
+		uint32_t unk_b0_bc[4];
+		uint32_t unk_c0_c4[2];
+		uint16_t unk_c8_ca[2]; // stored with u32 at 0xc0
+		uint32_t unk_cc;
+		uint32_t unk_d0_dc[4];
+		uint32_t unk_e0;
+
+		// Party Games->Monkey race->OneCourse Race
+		unsigned char jungle_circuit_laps;
+		unsigned char aqua_offroad_laps;
+		unsigned char frozen_highway_laps;
+		unsigned char sky_downtop_laps;
+		unsigned char pipe_warp_tunnel_laps;
+		unsigned char speed_desert_laps;
+
+		unsigned char partygames_monkeyrace_course_select_idx;
+		unsigned char partygames_monkeyrace_cursor_idx;
+
+		unsigned char unk_ec; // Crash on SEGA logo if != 0x00 ?
+		unsigned char unk_ed; // 0f    (r3 in call to 800b6224)
+		unsigned char partygames_monkeytarget_rounds; // 0a
+		unsigned char unk_ef; // 00
+	};
+
+
 	struct party_game_table party_game_scores;
 	struct mini_game_table  mini_game_scores;
 
-	// 32 bytes of unknown data. 
-	// low-order byte for play points is at 0x17 (dunno how wide it is)
-	unsigned char unk_9[0x20]; 
+	// starts at offset 0x2ec; 0x20 bytes wide
+	struct {
+		uint32_t unk_2ec; // 00 00 00 00
+		
+		unsigned char unk_2f0_2f4[5]; // 00 00 00 03 00
+
+		unsigned char unk_2f5; // 03
+		unsigned char unk_2f6; // 02
+		unsigned char unk_2f7; // 00
+
+		uint32_t unk_2f8; // 00000018
+
+		unsigned char unk_2fc; // 00
+		unsigned char unk_2fd; // 00
+
+		unsigned char unk_2fe_2ff[2]; // zero padding?
+
+		uint32_t unk_300_304[2];
+
+		unsigned char unk_308_30b[4]; // zero padding?
+	};
+
 	struct main_game_table  main_game_scores;
+	uint32_t unk_3fc; // 00 00 00 00 (zero padding?)
 }__attribute__((__packed__));
 
 struct gci {
