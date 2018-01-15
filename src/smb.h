@@ -18,6 +18,12 @@
 #define DENTRY_SIZE 0x40
 #define BANNER_SIZE 0x2000
 
+enum minigame_type {
+	BILLIARDS = 0x01,
+	BOWLING = 0x02,
+	GOLF = 0x04,
+};
+
 /* This is on the header of every .GCI file */
 struct dentry {
 	uint8_t gamecode[4];
@@ -32,9 +38,9 @@ struct dentry {
 	uint8_t permissions;
 	uint8_t copy_counter;
 	uint8_t first_block[2];
-	uint8_t block_count[2];
+	uint16_t block_count;
 	uint8_t unused_b[2];
-	uint8_t comments_addr[4];
+	uint32_t comments_addr;
 }__attribute__((__packed__));
 
 /* This is the layout for replay savefiles;
@@ -59,7 +65,7 @@ struct smb_data {
  * we've finished articulating the actual format. */
 struct smb_gamedata {
 	unsigned char checksum[2];
-	unsigned char gamedata_version[2]; // I think?
+	uint16_t gamedata_version; // I think?
 	unsigned char banner[0x5800];
 	unsigned char comments[COMMENT_SIZE];
 	unsigned char unk_6[4];
@@ -142,21 +148,25 @@ struct mini_game_table {
  *	(zero padding until EOF)
  */
 struct smb_gamedata_cont {
-	unsigned char gamedata_block_1[0x40];
+	//unsigned char gamedata_block_1[0x40];
+	float p1_calibration[4];
+	float p2_calibration[4];
+	float p3_calibration[4];
+	float p4_calibration[4];
 
 	// gamedata_block_2
 	struct {
-		unsigned char gameselect_cursor_idx;
-		unsigned char maingame_modeselect_cursor_idx;
+		unsigned char gameselect_cursor_idx; // unvalidated
+		unsigned char maingame_modeselect_cursor_idx; // unvalidated
 
 		unsigned char unk_86_87[2];
 
 		// P1 - P4 character selection cursor
-		unsigned char character_select_idx[4];
+		unsigned char character_select_idx[4]; // unvalidated
 
 		unsigned char unk_8c_8d[2]; // 50 5a
-		unsigned char maingame_difficulty_cursor_idx; // 00
-		unsigned char maingame_difficulty_cursor_idx_2; // 00
+		unsigned char maingame_difficulty_cursor_idx; // 00 ;unvalidated
+		unsigned char maingame_difficulty_cursor_idx_2; // 00 ;unvalidated
 		unsigned char unk_90; // 03
 		unsigned char unk_91_95[5]; // 33 05 03 01 00
 
@@ -182,10 +192,10 @@ struct smb_gamedata_cont {
 		unsigned char pipe_warp_tunnel_laps;
 		unsigned char speed_desert_laps;
 
-		unsigned char partygames_monkeyrace_course_select_idx;
-		unsigned char partygames_monkeyrace_cursor_idx;
+		unsigned char partygames_monkeyrace_course_select_idx; // unvalidated
+		unsigned char partygames_monkeyrace_cursor_idx; // unvalidated
 
-		unsigned char unk_ec; // Crash on SEGA logo if != 0x00 ?
+		unsigned char unk_ec; // unvalidated input (SEGA logo if !=0x00)
 		unsigned char unk_ed; // 0f    (r3 in call to 800b6224)
 		unsigned char partygames_monkeytarget_rounds; // 0a
 		unsigned char unk_ef; // 00
@@ -199,20 +209,38 @@ struct smb_gamedata_cont {
 	struct {
 		uint32_t unk_2ec; // 00 00 00 00
 		
-		unsigned char unk_2f0_2f4[5]; // 00 00 00 03 00
+		unsigned char unk_2f0; // 00
+		unsigned char unk_2f1; // 00
+		unsigned char unk_2f2; // 00
+		unsigned char unk_2f3; // 03
+		unsigned char unk_2f4; // 00 ;unvalidated
 
-		unsigned char unk_2f5; // 03
-		unsigned char unk_2f6; // 02
-		unsigned char unk_2f7; // 00
+		unsigned char minigame_billiards_num_sets; // 03
 
-		uint32_t unk_2f8; // 00000018
+		/* 0x00 - LVL1; 0x01 - LVL2; ... */
+		unsigned char minigame_billiards_com_level; // 02;unvalidated
+		unsigned char minigame_billiards_cursor_idx; // 00;unvalidated
 
-		unsigned char unk_2fc; // 00
-		unsigned char unk_2fd; // 00
+		unsigned char unk_2f8;
+		unsigned char unk_2f9;
+		unsigned char unk_2fa;
+		unsigned char unk_2fb;
 
-		unsigned char unk_2fe_2ff[2]; // zero padding?
+		unsigned char minigame_golf_cursor_idx; // 00
 
-		uint32_t unk_300_304[2];
+		/* 0x00 - 18 holes; 0x01 - OUT; 0x02 - IN */
+		unsigned char minigame_golf_holes_idx; // 00
+
+		unsigned char unk_2fe; // 00
+
+		/* u8 bitmask? (maybe it's a u16?)
+		 * (1 << 0) = billiards;  (1 << 1) = bowling
+		 * (1 << 2) = golf 
+		 * Dunno what the other bits do (yet) */
+		unsigned char minigames_unlocked; // 00
+
+		int32_t play_points; // (remember to convert to BE)
+		uint32_t unk_304;
 
 		unsigned char unk_308_30b[4]; // zero padding?
 	};
