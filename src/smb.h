@@ -156,17 +156,30 @@ struct smb_gamedata_cont {
 
 	// gamedata_block_2
 	struct {
-		unsigned char gameselect_cursor_idx; // unvalidated
-		unsigned char maingame_modeselect_cursor_idx; // unvalidated
+		/* Unvalidated field.
+		 * Expected, valid values are 0x0{0,1,2}.
+		 */
+		unsigned char gameselect_cursor_idx; // 00
+
+		/* Unvalidated field.
+		 * Expected, valid values are 0x0{0,1,2}.
+		 */
+		unsigned char maingame_modeselect_cursor_idx; // 00
 
 		unsigned char unk_86_87[2];
 
-		// P1 - P4 character selection cursor
-		unsigned char character_select_idx[4]; // unvalidated
+		/* Unvalidated field. P1 - P4 character selection cursor.
+		 * Expected, valid values are 0x0{0,1,2,3}.
+		 */
+		unsigned char character_select_idx[4]; //00 01 02 03
 
 		unsigned char unk_8c_8d[2]; // 50 5a
-		unsigned char maingame_difficulty_cursor_idx; // 00 ;unvalidated
-		unsigned char maingame_difficulty_cursor_idx_2; // 00 ;unvalidated
+
+		/* Unvalidated field.
+		 * Expected, valid values are 0x0{0,1,2}.
+		 */
+		unsigned char maingame_difficulty_cursor_idx; // 00
+		unsigned char maingame_difficulty_cursor_idx_2; // 00
 		unsigned char unk_90; // 03
 		unsigned char unk_91_95[5]; // 33 05 03 01 00
 
@@ -192,10 +205,14 @@ struct smb_gamedata_cont {
 		unsigned char pipe_warp_tunnel_laps;
 		unsigned char speed_desert_laps;
 
-		unsigned char partygames_monkeyrace_course_select_idx; // unvalidated
-		unsigned char partygames_monkeyrace_cursor_idx; // unvalidated
+		/* Unvalidated field */
+		unsigned char partygames_monkeyrace_course_select_idx;
+		/* Unvalidated field */
+		unsigned char partygames_monkeyrace_cursor_idx;
 
-		unsigned char unk_ec; // unvalidated input (SEGA logo if !=0x00)
+		/* Unvalidated field (crash if != 0x00) */
+		unsigned char unk_ec;
+
 		unsigned char unk_ed; // 0f    (r3 in call to 800b6224)
 		unsigned char partygames_monkeytarget_rounds; // 0a
 		unsigned char unk_ef; // 00
@@ -217,25 +234,39 @@ struct smb_gamedata_cont {
 
 		unsigned char minigame_billiards_num_sets; // 03
 
-		/* 0x00 - LVL1; 0x01 - LVL2; ... */
-		unsigned char minigame_billiards_com_level; // 02;unvalidated
-		unsigned char minigame_billiards_cursor_idx; // 00;unvalidated
+		/* Unvalidated field.
+		 * Expected, valid values:
+		 *	0x00 - LVL1
+		 *	0x01 - LVL2
+		 *	0x02 - LVL3
+		 *	0x03 - LVL4
+		 *	0x04 - LVL5
+		 */
+		unsigned char minigame_billiards_com_level; // 02
 
-		unsigned char unk_2f8;
-		unsigned char unk_2f9;
-		unsigned char unk_2fa;
-		unsigned char unk_2fb;
+		/* Unvalidated field */
+		unsigned char minigame_billiards_cursor_idx; // 00
+
+		unsigned char unk_2f8; // 00
+		unsigned char unk_2f9; // 00
+		unsigned char unk_2fa; // 00
+		unsigned char unk_2fb; // 18
 
 		unsigned char minigame_golf_cursor_idx; // 00
 
-		/* 0x00 - 18 holes; 0x01 - OUT; 0x02 - IN */
+		/* Expected values:
+		 *	   0x00 - 18 holes
+		 *	   0x01 - OUT
+		 *	   0x02 - IN
+		 */
 		unsigned char minigame_golf_holes_idx; // 00
 
 		unsigned char unk_2fe; // 00
 
 		/* u8 bitmask? (maybe it's a u16?)
-		 * (1 << 0) = billiards;  (1 << 1) = bowling
-		 * (1 << 2) = golf 
+		 *	   (1 << 0) = billiards
+		 *	   (1 << 1) = bowling
+		 *	   (1 << 2) = golf
 		 * Dunno what the other bits do (yet) */
 		unsigned char minigames_unlocked; // 00
 

@@ -8,5 +8,5 @@
 !src/smb-deflate.c
 !src/smb_compression.c
 !src/smb_compression.h
-!src/random-gci.c
+!src/fuzz.c
 !src/smb.h
